@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product List</title>
+    <style>
+      /* Basic styling for the card */
+      .card {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        width: 300px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        margin: 20px auto;
+      }
+
+      /* Image styling */
+      .card img {
+        width: 100%;
+        height: auto;
+      }
+
+      /* Card content styling */
+      .card-content {
+        padding: 16px;
+      }
+
+      .card-title {
+        font-size: 1.25em;
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+
+      .card-description {
+        font-size: 1em;
+        color: #555;
+        margin-bottom: 16px;
+      }
+
+      /* Button styling */
+      .card-button {
+        display: inline-block;
+        padding: 10px 20px;
+        font-size: 1em;
+        color: #fff;
+        background-color: #007bff;
+        border: none;
+        border-radius: 4px;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .card-button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Product List</h1>
+    <div id="product-list">
+      <div>
+        <% products.forEach(product => { %>
+        <div class="card">
+          <img src="<%= product.image %>" alt="<%= product.name %>" />
+          <div class="card-content">
+            <div class="card-title"><%= product.name %></div>
+            <div class="card-description">
+              <p>$<%= product.price %></p>
+              <p>Type: <%= product.category %></p>
+              <p>
+                Rating :<%= product.rating.rate %>,by: <%= product.rating.count
+                %> users
+              </p>
+              <p><%= product.description %></p>
+            </div>
+            <button onclick="addToCart('<%= product._id %>')">Add to Cart</button>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    async function addToCart(productId) {
+      try {
+        const token = localStorage.getItem("token"); // Get the token from localStorage
+
+        const response = await fetch("/api/cart/add", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // Pass the token
+          },
+          body: JSON.stringify({
+            productId: productId,
+            quantity: 1,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorMessage = await response.text(); // Read response as text
+          throw new Error(
+            `Network response was not ok: ${response.status} ${errorMessage}`
+          );
+        }
+
+        const result = await response.json(); // Parse JSON response
+        console.log("result is :", result);
+        window.location.href = "/cart";
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+  </script>
+</html>

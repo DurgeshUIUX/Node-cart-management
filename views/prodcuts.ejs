@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Products</title>
+</head>
+<body>
+    <h1>Products</h1>
+    <ul>
+        <% products.forEach(product => { %>
+            <li>
+                <img src="<%= product.image %>" alt="<%= product.name %>">
+                <h2><%= product.name %></h2>
+                <p>Price: <%= product.price %></p>
+                <button onclick="addToCart('<%= product._id %>')">Add to Cart</button>
+            </li>
+        <% }) %>
+    </ul>
+
+    <script>
+        function addToCart(productId) {
+            fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ productId, quantity: 1 })
+            }).then(response => response.text()).then(data => {
+                console.log(data);
+                // Update the cart in real-time using WebSocket
+                const ws = new WebSocket('ws://localhost:3000/cart-updates');
+                ws.onopen = () => {
+                    ws.send('Cart updated');
+                };
+            });
+        }
+    </script>
+</body>
+</html>

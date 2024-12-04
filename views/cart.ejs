@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shopping Cart</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <!-- Link to your CSS file -->
+    <script src="/socket.io/socket.io.js?v=4.0.0"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- jQuery for simplicity -->
+    <script>
+      $(document).ready(function () {
+        const sampleCart = {
+          items: [
+            {
+              _id: "1",
+              name: "Sample Product 1",
+              image: "https://via.placeholder.com/50",
+              price: 10.0,
+              quantity: 2,
+            },
+            {
+              _id: "2",
+              name: "Sample Product 2",
+              image: "https://via.placeholder.com/50",
+              price: 20.0,
+              quantity: 1,
+            },
+          ],
+        };
+
+        updateCart(sampleCart); // Manually call with sample data
+
+        // Initialize Socket.io
+        const socket = io();
+        socket.on("connect", () => {
+          console.log("Connected to server");
+        });
+
+        // Update cart in real-time
+        socket.on("cart-update", function (cart) {
+          console.log("Received cart data:", cart);
+          updateCart(cart);
+        });
+
+        socket.on("disconnect", () => {
+          console.log("Disconnected from server");
+        });
+
+        // Add event listener for updating quantity
+        $(document).on("click", ".update-quantity", function () {
+          const itemId = $(this).data("item-id");
+          const newQuantity = $(this).siblings(".quantity").val();
+          $.ajax({
+            url: "/api/cart/update",
+            method: "POST",
+            data: { itemId, quantity: newQuantity },
+            success: function (cart) {
+              socket.emit("cart-update", cart);
+            },
+            error: function () {
+              alert("Error updating quantity.");
+            },
+          });
+        });
+
+        // Add event listener for removing item
+        $(document).on("click", ".remove-item", function () {
+          const itemId = $(this).data("item-id");
+          $.ajax({
+            url: "/api/cart/remove",
+            method: "POST",
+            data: { itemId },
+            success: function (cart) {
+              socket.emit("cart-update", cart);
+            },
+            error: function () {
+              alert("Error removing item.");
+            },
+          });
+        });
+
+        function updateCart(cart) {
+          let cartHtml = "";
+          let totalPrice = 0;
+          console.log("cart", cart); // Log the cart object
+          cart.items.forEach((item) => {
+            console.log("Processing item:", item); // Log each item
+            totalPrice += item.price * item.quantity;
+            cartHtml += `
+            <tr>
+                <td>${item.name}</td>
+                <td><img src="${item.image}" alt="${item.name}" width="50"></td>
+                <td>$${item.price.toFixed(2)}</td>
+                <td>
+                    <input type="number" class="quantity" value="${
+                      item.quantity
+                    }" min="1" data-item-id="${item._id}">
+                    <button class="update-quantity" data-item-id="${
+                      item._id
+                    }">Update</button>
+                    <button class="remove-item" data-item-id="${
+                      item._id
+                    }">Remove</button>
+                </td>
+            </tr>
+        `;
+          });
+
+          $("#cart-table tbody").html(cartHtml);
+          $("#total-price").text(`Total Price: $${totalPrice.toFixed(2)}`);
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Shopping Cart</h1>
+      <nav>
+        <a href="/">Home</a> | <a href="/cart">Cart</a> |
+        <a href="/logout">Logout</a>
+      </nav>
+    </header>
+
+    <main>
+      <table id="cart-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Image</th>
+            <th>Price</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Cart items will be dynamically inserted here -->
+        </tbody>
+      </table>
+
+      <div id="total-price">
+        <!-- Total price will be dynamically inserted here -->
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2024 Your Company</p>
+    </footer>
+  </body>
+</html>
